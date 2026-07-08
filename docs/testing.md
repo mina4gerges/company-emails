@@ -75,8 +75,7 @@ project-root/
 └── test/
     ├── e2e/
     │   ├── auth.e2e-spec.ts
-    │   ├── user.e2e-spec.ts
-    │   └── post.e2e-spec.ts
+    │   └── user.e2e-spec.ts
     └── jest-e2e.json
 ```
 
@@ -92,20 +91,19 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommandBus } from '@nestjs/cqrs';
 
-import { PostService } from '../post.service';
-import { PostEntity } from '../post.entity';
-import { PostNotFoundException } from '../exceptions/post-not-found.exception';
-import { CreatePostDto } from '../dtos/create-post.dto';
+import { UserService } from '../user.service';
+import { UserEntity } from '../user.entity';
+import { UserNotFoundException } from '../../../exceptions/user-not-found.exception';
+import { CreateSettingsDto } from '../dtos/create-settings.dto';
 
-describe('PostService', () => {
-  let service: PostService;
-  let repository: Repository<PostEntity>;
+describe('UserService', () => {
+  let service: UserService;
+  let repository: Repository<UserEntity>;
   let commandBus: CommandBus;
 
   const mockRepository = {
-    findOne: jest.fn(),
+    findOneBy: jest.fn(),
     save: jest.fn(),
-    remove: jest.fn(),
     createQueryBuilder: jest.fn(() => ({
       where: jest.fn().mockReturnThis(),
       getOne: jest.fn(),
@@ -119,9 +117,9 @@ describe('PostService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        PostService,
+        UserService,
         {
-          provide: getRepositoryToken(PostEntity),
+          provide: getRepositoryToken(UserEntity),
           useValue: mockRepository,
         },
         {
@@ -131,8 +129,8 @@ describe('PostService', () => {
       ],
     }).compile();
 
-    service = module.get<PostService>(PostService);
-    repository = module.get<Repository<PostEntity>>(getRepositoryToken(PostEntity));
+    service = module.get<UserService>(UserService);
+    repository = module.get<Repository<UserEntity>>(getRepositoryToken(UserEntity));
     commandBus = module.get<CommandBus>(CommandBus);
   });
 
@@ -140,53 +138,52 @@ describe('PostService', () => {
     jest.clearAllMocks();
   });
 
-  describe('getSinglePost', () => {
-    it('should return a post when found', async () => {
+  describe('getUser', () => {
+    it('should return a user when found', async () => {
       // Arrange
-      const postId = 'uuid-123';
-      const expectedPost = { id: postId, title: 'Test Post' } as PostEntity;
+      const userId = 'uuid-123' as Uuid;
+      const expectedUser = { id: userId, toDto: jest.fn() } as unknown as UserEntity;
 
-      mockRepository.createQueryBuilder().getOne.mockResolvedValue(expectedPost);
+      mockRepository.createQueryBuilder().getOne.mockResolvedValue(expectedUser);
 
       // Act
-      const result = await service.getSinglePost(postId);
+      await service.getUser(userId);
 
       // Assert
-      expect(result).toEqual(expectedPost);
       expect(mockRepository.createQueryBuilder).toHaveBeenCalled();
     });
 
-    it('should throw PostNotFoundException when post not found', async () => {
+    it('should throw UserNotFoundException when user not found', async () => {
       // Arrange
-      const postId = 'non-existent-uuid';
+      const userId = 'non-existent-uuid' as Uuid;
       mockRepository.createQueryBuilder().getOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.getSinglePost(postId)).rejects.toThrow(PostNotFoundException);
+      await expect(service.getUser(userId)).rejects.toThrow(UserNotFoundException);
     });
   });
 
-  describe('createPost', () => {
-    it('should create a post using command bus', async () => {
+  describe('createSettings', () => {
+    it('should create settings using command bus', async () => {
       // Arrange
-      const userId = 'user-uuid';
-      const createPostDto: CreatePostDto = {
-        title: [{ languageCode: 'en', text: 'Test Title' }],
-        description: [{ languageCode: 'en', text: 'Test Description' }],
+      const userId = 'user-uuid' as Uuid;
+      const createSettingsDto: CreateSettingsDto = {
+        isEmailVerified: false,
+        isPhoneVerified: false,
       };
-      const expectedPost = { id: 'post-uuid' } as PostEntity;
+      const expectedSettings = { id: 'settings-uuid' };
 
-      mockCommandBus.execute.mockResolvedValue(expectedPost);
+      mockCommandBus.execute.mockResolvedValue(expectedSettings);
 
       // Act
-      const result = await service.createPost(userId, createPostDto);
+      const result = await service.createSettings(userId, createSettingsDto);
 
       // Assert
-      expect(result).toEqual(expectedPost);
+      expect(result).toEqual(expectedSettings);
       expect(mockCommandBus.execute).toHaveBeenCalledWith(
         expect.objectContaining({
           userId,
-          createPostDto,
+          createSettingsDto,
         })
       );
     });
@@ -198,86 +195,62 @@ describe('PostService', () => {
 
 ```typescript
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpStatus } from '@nestjs/common';
 
-import { PostController } from '../post.controller';
-import { PostService } from '../post.service';
-import { UserEntity } from '../../user/user.entity';
-import { CreatePostDto } from '../dtos/create-post.dto';
-import { PostDto } from '../dtos/post.dto';
+import { UserController } from '../user.controller';
+import { UserService } from '../user.service';
+import { TranslationService } from '../../../shared/services/translation.service';
+import { UserDto } from '../dtos/user.dto';
 
-describe('PostController', () => {
-  let controller: PostController;
-  let service: PostService;
+describe('UserController', () => {
+  let controller: UserController;
+  let service: UserService;
 
-  const mockPostService = {
-    createPost: jest.fn(),
-    getSinglePost: jest.fn(),
-    getAllPost: jest.fn(),
-    updatePost: jest.fn(),
-    deletePost: jest.fn(),
+  const mockUserService = {
+    getUsers: jest.fn(),
+    getUser: jest.fn(),
+  };
+
+  const mockTranslationService = {
+    translate: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [PostController],
+      controllers: [UserController],
       providers: [
         {
-          provide: PostService,
-          useValue: mockPostService,
+          provide: UserService,
+          useValue: mockUserService,
+        },
+        {
+          provide: TranslationService,
+          useValue: mockTranslationService,
         },
       ],
     }).compile();
 
-    controller = module.get<PostController>(PostController);
-    service = module.get<PostService>(PostService);
+    controller = module.get<UserController>(UserController);
+    service = module.get<UserService>(UserService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('createPost', () => {
-    it('should create a post and return DTO', async () => {
+  describe('getUser', () => {
+    it('should return a user DTO', async () => {
       // Arrange
-      const user = { id: 'user-uuid' } as UserEntity;
-      const createPostDto: CreatePostDto = {
-        title: [{ languageCode: 'en', text: 'Test Title' }],
-        description: [{ languageCode: 'en', text: 'Test Description' }],
-      };
-      const postEntity = {
-        id: 'post-uuid',
-        toDto: jest.fn().mockReturnValue({ id: 'post-uuid' } as PostDto),
-      };
+      const userId = 'user-uuid' as Uuid;
+      const userDto = { id: userId } as UserDto;
 
-      mockPostService.createPost.mockResolvedValue(postEntity);
+      mockUserService.getUser.mockResolvedValue(userDto);
 
       // Act
-      const result = await controller.createPost(createPostDto, user);
+      const result = await controller.getUser(userId);
 
       // Assert
-      expect(result).toEqual({ id: 'post-uuid' });
-      expect(mockPostService.createPost).toHaveBeenCalledWith(user.id, createPostDto);
-      expect(postEntity.toDto).toHaveBeenCalled();
-    });
-  });
-
-  describe('getSinglePost', () => {
-    it('should return a post DTO', async () => {
-      // Arrange
-      const postId = 'post-uuid';
-      const postEntity = {
-        toDto: jest.fn().mockReturnValue({ id: postId } as PostDto),
-      };
-
-      mockPostService.getSinglePost.mockResolvedValue(postEntity);
-
-      // Act
-      const result = await controller.getSinglePost(postId);
-
-      // Assert
-      expect(result).toEqual({ id: postId });
-      expect(mockPostService.getSinglePost).toHaveBeenCalledWith(postId);
+      expect(result).toEqual(userDto);
+      expect(mockUserService.getUser).toHaveBeenCalledWith(userId);
     });
   });
 });
@@ -290,22 +263,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { CreatePostHandler } from '../commands/create-post.handler';
-import { CreatePostCommand } from '../commands/create-post.command';
-import { PostEntity } from '../post.entity';
-import { PostTranslationEntity } from '../post-translation.entity';
+import { CreateSettingsHandler, CreateSettingsCommand } from '../commands/create-settings.command';
+import { UserSettingsEntity } from '../user-settings.entity';
 
-describe('CreatePostHandler', () => {
-  let handler: CreatePostHandler;
-  let postRepository: Repository<PostEntity>;
-  let translationRepository: Repository<PostTranslationEntity>;
+describe('CreateSettingsHandler', () => {
+  let handler: CreateSettingsHandler;
+  let settingsRepository: Repository<UserSettingsEntity>;
 
-  const mockPostRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-  };
-
-  const mockTranslationRepository = {
+  const mockSettingsRepository = {
     create: jest.fn(),
     save: jest.fn(),
   };
@@ -313,49 +278,40 @@ describe('CreatePostHandler', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CreatePostHandler,
+        CreateSettingsHandler,
         {
-          provide: getRepositoryToken(PostEntity),
-          useValue: mockPostRepository,
-        },
-        {
-          provide: getRepositoryToken(PostTranslationEntity),
-          useValue: mockTranslationRepository,
+          provide: getRepositoryToken(UserSettingsEntity),
+          useValue: mockSettingsRepository,
         },
       ],
     }).compile();
 
-    handler = module.get<CreatePostHandler>(CreatePostHandler);
-    postRepository = module.get<Repository<PostEntity>>(getRepositoryToken(PostEntity));
-    translationRepository = module.get<Repository<PostTranslationEntity>>(
-      getRepositoryToken(PostTranslationEntity)
+    handler = module.get<CreateSettingsHandler>(CreateSettingsHandler);
+    settingsRepository = module.get<Repository<UserSettingsEntity>>(
+      getRepositoryToken(UserSettingsEntity)
     );
   });
 
   describe('execute', () => {
-    it('should create post with translations', async () => {
+    it('should create settings for a user', async () => {
       // Arrange
-      const command = new CreatePostCommand('user-uuid', {
-        title: [{ languageCode: 'en', text: 'Test Title' }],
-        description: [{ languageCode: 'en', text: 'Test Description' }],
+      const command = new CreateSettingsCommand('user-uuid' as Uuid, {
+        isEmailVerified: false,
+        isPhoneVerified: false,
       });
 
-      const postEntity = { id: 'post-uuid' } as PostEntity;
-      const translationEntity = { id: 'translation-uuid' } as PostTranslationEntity;
+      const settingsEntity = { id: 'settings-uuid' } as UserSettingsEntity;
 
-      mockPostRepository.create.mockReturnValue(postEntity);
-      mockPostRepository.save.mockResolvedValue(postEntity);
-      mockTranslationRepository.create.mockReturnValue(translationEntity);
-      mockTranslationRepository.save.mockResolvedValue([translationEntity]);
+      mockSettingsRepository.create.mockReturnValue(settingsEntity);
+      mockSettingsRepository.save.mockResolvedValue(settingsEntity);
 
       // Act
       const result = await handler.execute(command);
 
       // Assert
-      expect(result).toEqual(postEntity);
-      expect(mockPostRepository.create).toHaveBeenCalledWith({ userId: 'user-uuid' });
-      expect(mockPostRepository.save).toHaveBeenCalledWith(postEntity);
-      expect(mockTranslationRepository.save).toHaveBeenCalled();
+      expect(result).toEqual(settingsEntity);
+      expect(mockSettingsRepository.create).toHaveBeenCalledWith(command.createSettingsDto);
+      expect(mockSettingsRepository.save).toHaveBeenCalledWith(settingsEntity);
     });
   });
 });
@@ -372,14 +328,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
-import { PostModule } from '../post.module';
-import { PostService } from '../post.service';
-import { PostEntity } from '../post.entity';
-import { PostTranslationEntity } from '../post-translation.entity';
+import { UserModule } from '../user.module';
+import { UserService } from '../user.service';
+import { UserEntity } from '../user.entity';
+import { UserSettingsEntity } from '../user-settings.entity';
 
-describe('Post Module Integration', () => {
+describe('User Module Integration', () => {
   let module: TestingModule;
-  let service: PostService;
+  let service: UserService;
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
@@ -388,15 +344,15 @@ describe('Post Module Integration', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [PostEntity, PostTranslationEntity],
+          entities: [UserEntity, UserSettingsEntity],
           synchronize: true,
           logging: false,
         }),
-        PostModule,
+        UserModule,
       ],
     }).compile();
 
-    service = module.get<PostService>(PostService);
+    service = module.get<UserService>(UserService);
   });
 
   afterAll(async () => {
@@ -407,9 +363,8 @@ describe('Post Module Integration', () => {
     expect(service).toBeDefined();
   });
 
-  it('should create and retrieve a post', async () => {
-    // This test would require proper setup with user authentication
-    // and complete module dependencies
+  it('should create and retrieve a user', async () => {
+    // This test would require proper setup with complete module dependencies
   });
 });
 ```

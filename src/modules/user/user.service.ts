@@ -7,12 +7,7 @@ import type { Repository } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 
 import type { PageDto } from '../../common/dto/page.dto.ts';
-import { FileNotImageException } from '../../exceptions/file-not-image.exception.ts';
 import { UserNotFoundException } from '../../exceptions/user-not-found.exception.ts';
-import type { IFile } from '../../interfaces/IFile.ts';
-import { AwsS3Service } from '../../shared/services/aws-s3.service.ts';
-import { ValidatorService } from '../../shared/services/validator.service.ts';
-import type { Reference } from '../../types.ts';
 import type { UserRegisterDto } from '../auth/dto/user-register.dto.ts';
 import { CreateSettingsCommand } from './commands/create-settings.command.ts';
 import { CreateSettingsDto } from './dtos/create-settings.dto.ts';
@@ -26,8 +21,6 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
-    private validatorService: ValidatorService,
-    private awsS3Service: AwsS3Service,
     private commandBus: CommandBus,
   ) {}
 
@@ -61,19 +54,8 @@ export class UserService {
   }
 
   @Transactional()
-  async createUser(
-    userRegisterDto: UserRegisterDto,
-    file?: Reference<IFile>,
-  ): Promise<UserEntity> {
+  async createUser(userRegisterDto: UserRegisterDto): Promise<UserEntity> {
     const user = this.userRepository.create(userRegisterDto);
-
-    if (file && !this.validatorService.isImage(file.mimetype)) {
-      throw new FileNotImageException();
-    }
-
-    if (file) {
-      user.avatar = await this.awsS3Service.uploadImage(file);
-    }
 
     await this.userRepository.save(user);
 

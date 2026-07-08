@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Enterprise-grade NestJS 11 boilerplate — TypeScript, PostgreSQL + TypeORM, JWT auth (RS256), CQRS, i18n, AWS S3, multi-runtime (Node/Bun/Deno), with NATS microservice scaffolding (disabled by default).
+Minimal enterprise-pattern NestJS 11 service — TypeScript, PostgreSQL + TypeORM, JWT auth (RS256), CQRS, i18n. Trimmed down from a larger boilerplate: no file storage, no microservice transport, Node-only runtime.
 
 ## Package Manager
 
@@ -37,7 +37,6 @@ pnpm migration:revert   # Revert last migration
 - Feature modules under `src/modules/` — each fully encapsulated (CQRS pattern recommended)
 - Shared services in `src/shared/`
 - Global filters, interceptors, pipes registered in `src/main.ts`
-- NATS microservice conditional on `NATS_ENABLED` env var
 - Swagger available at `/documentation` when `ENABLE_DOCUMENTATION=true`
 
 For detailed architecture: @docs/architecture.md
@@ -85,7 +84,7 @@ import type { UserDto } from './user.dto.ts';
 
 **Commits:** Conventional Commits format:
 ```
-feat(user): add profile image upload
+feat(user): add pagination to user list endpoint
 fix(auth): handle expired refresh tokens
 chore(deps): upgrade typeorm to 0.3.21
 ```

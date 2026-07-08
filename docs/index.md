@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Awesome NestJS
   text: v11 Boilerplate
-  tagline: Enterprise-grade NestJS boilerplate with TypeScript, PostgreSQL, TypeORM, JWT auth (RS256), CQRS, i18n, and multi-runtime support.
+  tagline: Minimal enterprise-pattern NestJS service with TypeScript, PostgreSQL, TypeORM, JWT auth (RS256), CQRS, and i18n.
   actions:
     - theme: brand
       text: Get Started
@@ -16,8 +16,6 @@ hero:
 features:
   - title: JWT Authentication
     details: Pre-configured RS256 JWT authentication with access and refresh token support.
-  - title: Multi-Runtime
-    details: Run on Node.js, Bun, or Deno — first-class support for all three runtimes.
   - title: CQRS Pattern
     details: Command Query Responsibility Segregation built in for scalable, maintainable code.
   - title: Swagger Documentation

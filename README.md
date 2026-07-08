@@ -5,9 +5,9 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D25-339933?logo=node.js)](https://nodejs.org)
 [![CI](https://github.com/NarHakobyan/awesome-nest-boilerplate/actions/workflows/lint.yml/badge.svg)](https://github.com/NarHakobyan/awesome-nest-boilerplate/actions)
 
-> An enterprise-grade NestJS starter built for teams that care about code structure
-> at scale. Ships with CQRS, strict TypeScript, JWT auth (RS256), and multi-runtime
-> support — all wired with zero configuration drift.
+> A minimal, enterprise-pattern NestJS starter built for teams that care about code
+> structure at scale. Ships with CQRS, strict TypeScript, and JWT auth (RS256) —
+> all wired with zero configuration drift.
 
 ## Quick Start
 
@@ -38,7 +38,6 @@ Open [http://localhost:3000](http://localhost:3000). The API docs are at [/docum
 | **Strict TypeScript** — No `any`, ESM, verbatim modules | **i18n** — Multi-language (en_US, ar_SA) | **Swagger** — Auto-generated API docs |
 | **Vite HMR** — Instant dev reload | **UUID v7** — Time-sortable primary keys | **Biome + ESLint** — Linting & formatting |
 | **Helmet + Rate Limiting** — Built-in security | **CORS** — Configurable origins | **Validation** — Custom decorators, DTO guards |
-| **Node / Bun / Deno** — Multi-runtime | **OpenAPI MCP** — AI assistants call your API | |
 
 ## Taste of the Codebase
 
@@ -46,36 +45,36 @@ A typical CQRS flow — command, handler, and service wired through NestJS DI:
 
 ```ts
 // ── Command ──────────────────────────────────────────────
-export class CreatePostCommand extends Command {
+export class CreateSettingsCommand extends Command {
   constructor(
     public readonly userId: Uuid,
-    public readonly dto: CreatePostDto,
+    public readonly dto: CreateSettingsDto,
   ) {
     super();
   }
 }
 
 // ── Handler ──────────────────────────────────────────────
-@CommandHandler(CreatePostCommand)
-export class CreatePostHandler {
+@CommandHandler(CreateSettingsCommand)
+export class CreateSettingsHandler {
   constructor(
-    @InjectRepository(PostEntity)
-    private repo: Repository<PostEntity>,
+    @InjectRepository(UserSettingsEntity)
+    private repo: Repository<UserSettingsEntity>,
   ) {}
 
-  async execute({ userId, dto }: CreatePostCommand): Promise<PostEntity> {
+  async execute({ userId, dto }: CreateSettingsCommand): Promise<UserSettingsEntity> {
     return this.repo.save(this.repo.create({ ...dto, userId }));
   }
 }
 
 // ── Service ──────────────────────────────────────────────
 @Injectable()
-export class PostService {
+export class UserService {
   constructor(private commandBus: CommandBus) {}
 
   @Transactional()
-  create(userId: Uuid, dto: CreatePostDto): Promise<PostEntity> {
-    return this.commandBus.execute(new CreatePostCommand(userId, dto));
+  createSettings(userId: Uuid, dto: CreateSettingsDto): Promise<UserSettingsEntity> {
+    return this.commandBus.execute(new CreateSettingsCommand(userId, dto));
   }
 }
 ```
@@ -108,9 +107,7 @@ src/
 ├── modules/
 │   ├── auth/            # JWT auth (RS256), login/register
 │   ├── user/            # User CRUD, RBAC
-│   ├── post/            # Post CRUD, CQRS example
-│   ├── agent/           # AI agent (ai-sdk v6)
-│   └── chat/            # Chat history (JSONB)
+│   └── health-checker/  # Health check endpoint
 ├── shared/              # Global services, config
 └── validators/          # Custom validation decorators
 ```
@@ -127,19 +124,9 @@ Copy `.env.example` → `.env`. Most variables come pre-configured with working 
 | `JWT_PRIVATE_KEY` | RS256 private key — generate your own or use the example PEM in `.env.example` |
 | `JWT_PUBLIC_KEY` | RS256 public key — matching public key |
 
-Every other variable in `.env.example` has a working default for local development. Optional features (NATS, S3, Email, AI providers) are off by default — enable them when you need them.
+Every other variable in `.env.example` has a working default for local development.
 
 [All environment variables →](https://narhakobyan.github.io/awesome-nest-boilerplate/development.html)
-
-## Multi-Runtime Support
-
-| Node.js | Bun | Deno |
-|---|---|---|
-| `pnpm start:dev` | `bun start:dev:bun` | `deno task start` |
-| `pnpm test` | `bun test` | `deno task test` |
-| `pnpm build:prod` | `bun build:bun` | `deno task buildr` |
-
-Node is the primary runtime. Bun and Deno support is included for teams that prefer them.
 
 ## Making It Your Own
 

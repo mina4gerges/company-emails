@@ -1,10 +1,8 @@
 import { applyDecorators } from '@nestjs/common';
 import type { ApiPropertyOptions } from '@nestjs/swagger';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
-  ArrayMaxSize,
-  ArrayMinSize,
   IsBoolean,
   IsDate,
   IsDefined,
@@ -14,9 +12,7 @@ import {
   IsNumber,
   IsPositive,
   IsString,
-  IsUrl,
   IsUUID,
-  Matches,
   Max,
   MaxLength,
   Min,
@@ -25,11 +21,9 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { supportedLanguageCount } from '../constants/language-code.ts';
 import type { Constructor } from '../types.ts';
 import { ApiEnumProperty, ApiUUIDProperty } from './property.decorators.ts';
 import {
-  LinkCleanupTransform,
   PhoneNumberSerializer,
   ToArray,
   ToBoolean,
@@ -41,11 +35,8 @@ import {
   IsNullable,
   IsPassword,
   IsPhoneNumber,
-  IsTmpKey as IsTemporaryKey,
   IsUndefinable,
 } from './validator.decorators.ts';
-
-type RequireField<T, K extends keyof T> = T & Required<Pick<T, K>>;
 
 interface IFieldOptions {
   each?: boolean;
@@ -169,16 +160,6 @@ export function StringField(
   return applyDecorators(...decorators);
 }
 
-export function TextAreaField(
-  options: Omit<ApiPropertyOptions, 'type'> &
-    Omit<IStringFieldOptions, 'trimNewLines'> = {},
-): PropertyDecorator {
-  return StringField({
-    ...options,
-    trimNewLines: false,
-  });
-}
-
 export function StringFieldOptional(
   options: Omit<ApiPropertyOptions, 'type' | 'required'> &
     IStringFieldOptions = {},
@@ -187,16 +168,6 @@ export function StringFieldOptional(
     IsUndefinable(),
     StringField({ required: false, ...options }),
   );
-}
-
-export function TextAreaFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type' | 'required'> &
-    Omit<IStringFieldOptions, 'trimNewLines'> = {},
-): PropertyDecorator {
-  return StringFieldOptional({
-    ...options,
-    trimNewLines: false,
-  });
 }
 
 export function PasswordField(
@@ -212,16 +183,6 @@ export function PasswordField(
   }
 
   return applyDecorators(...decorators);
-}
-
-export function PasswordFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type' | 'required' | 'minLength'> &
-    IStringFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(
-    IsUndefinable(),
-    PasswordField({ required: false, ...options }),
-  );
 }
 
 export function BooleanField(
@@ -251,81 +212,6 @@ export function BooleanFieldOptional(
   return applyDecorators(
     IsUndefinable(),
     BooleanField({ required: false, ...options }),
-  );
-}
-
-export function TranslationsField(
-  options: RequireField<Omit<ApiPropertyOptions, 'isArray'>, 'type'> &
-    IFieldOptions,
-): PropertyDecorator {
-  const decorators = [
-    ArrayMinSize(supportedLanguageCount),
-    ArrayMaxSize(supportedLanguageCount),
-    ValidateNested({
-      each: true,
-    }),
-    Type(() => options.type as FunctionConstructor),
-  ];
-
-  if (options.nullable) {
-    decorators.push(IsNullable());
-  } else {
-    decorators.push(NotEquals(null));
-  }
-
-  if (options.swagger !== false) {
-    decorators.push(
-      ApiProperty({ isArray: true, ...(options as ApiPropertyOptions) }),
-    );
-  }
-
-  return applyDecorators(...decorators);
-}
-
-export function TranslationsFieldOptional(
-  options: RequireField<Omit<ApiPropertyOptions, 'isArray'>, 'type'> &
-    IFieldOptions,
-): PropertyDecorator {
-  return applyDecorators(
-    IsUndefinable(),
-    TranslationsField({ required: false, ...options }),
-  );
-}
-
-export function TmpKeyField(
-  options: Omit<ApiPropertyOptions, 'type'> & IStringFieldOptions = {},
-): PropertyDecorator {
-  const decorators = [
-    StringField(options),
-    IsTemporaryKey({ each: options.each }),
-  ];
-
-  if (options.nullable) {
-    decorators.push(IsNullable());
-  } else {
-    decorators.push(NotEquals(null));
-  }
-
-  if (options.swagger !== false) {
-    decorators.push(
-      ApiProperty({
-        type: String,
-        ...(options as ApiPropertyOptions),
-        isArray: options.each,
-      }),
-    );
-  }
-
-  return applyDecorators(...decorators);
-}
-
-export function TmpKeyFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type' | 'required'> &
-    IStringFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(
-    IsUndefinable(),
-    TmpKeyField({ required: false, ...options }),
   );
 }
 
@@ -405,18 +291,6 @@ export function EnumFieldOptional<TEnum extends object>(
   return applyDecorators(
     IsUndefinable(),
     EnumField(getEnum, { required: false, ...options }),
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-export function ClassFieldOptional<TClass extends Constructor>(
-  getClass: () => TClass,
-  options: Omit<ApiPropertyOptions, 'type' | 'required'> &
-    IClassFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(
-    IsUndefinable(),
-    ClassField(getClass, { required: false, ...options }),
   );
 }
 
@@ -504,39 +378,6 @@ export function UUIDField(
   return applyDecorators(...decorators);
 }
 
-export function UUIDFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type' | 'required' | 'isArray'> &
-    IFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(
-    IsUndefinable(),
-    UUIDField({ required: false, ...options }),
-  );
-}
-
-export function URLField(
-  options: Omit<ApiPropertyOptions, 'type'> & IStringFieldOptions = {},
-): PropertyDecorator {
-  const decorators = [StringField(options), IsUrl({}, { each: true })];
-
-  if (options.nullable) {
-    decorators.push(IsNullable({ each: options.each }));
-  } else {
-    decorators.push(NotEquals(null, { each: options.each }));
-  }
-
-  return applyDecorators(...decorators);
-}
-
-export function URLFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type'> & IStringFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(
-    IsUndefinable(),
-    URLField({ required: false, ...options }),
-  );
-}
-
 export function DateField(
   options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
 ): PropertyDecorator {
@@ -555,176 +396,4 @@ export function DateField(
   }
 
   return applyDecorators(...decorators);
-}
-
-export function DateFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type' | 'required'> & IFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(
-    IsUndefinable(),
-    DateField({ ...options, required: false }),
-  );
-}
-
-export function LinkedinField(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  const decorators = [
-    Expose({ groups: options.groups, name: options.name }),
-    Type(() => String),
-    ApiProperty({ type: String }),
-    LinkCleanupTransform({
-      removeQueryParams: true,
-      removeTrailingSlash: true,
-    }),
-    Matches(/^(https:\/\/)?(www\.)?linkedin\.com([\w!#%&()+./:=?@~-]*)$/),
-  ];
-
-  if (options.nullable) {
-    decorators.push(IsNullable());
-  } else {
-    decorators.push(NotEquals(null));
-  }
-
-  return applyDecorators(...decorators);
-}
-
-export function FacebookField(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  const decorators = [
-    Expose({ groups: options.groups, name: options.name }),
-    Type(() => String),
-    ApiProperty({ type: String }),
-    LinkCleanupTransform(),
-    Matches(/^(https:\/\/)?(www\.)?facebook\.com([\w!#%&()+./:=?@~-]*)$/),
-  ];
-
-  if (options.nullable) {
-    decorators.push(IsNullable());
-  } else {
-    decorators.push(NotEquals(null));
-  }
-
-  return applyDecorators(...decorators);
-}
-
-export function InstagramField(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  const decorators = [
-    Expose({ groups: options.groups, name: options.name }),
-    Type(() => String),
-    ApiProperty({ type: String }),
-    LinkCleanupTransform(),
-    Matches(/^(https:\/\/)?(www\.)?instagram\.com([\w!#%&()+./:=?@~-]*)$/),
-  ];
-
-  if (options.nullable) {
-    decorators.push(IsNullable());
-  } else {
-    decorators.push(NotEquals(null));
-  }
-
-  return applyDecorators(...decorators);
-}
-
-export function TwitterField(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  const decorators = [
-    Expose({ groups: options.groups, name: options.name }),
-    Type(() => String),
-    ApiProperty({ type: String }),
-    LinkCleanupTransform(),
-    Matches(/^(https:\/\/)?(www\.)?twitter\.com([\w!#%&()+./:=?@~-]*)$/),
-  ];
-
-  if (options.nullable) {
-    decorators.push(IsNullable());
-  } else {
-    decorators.push(NotEquals(null));
-  }
-
-  return applyDecorators(...decorators);
-}
-
-export function WebsiteField(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  // Trailing slash cleanup could be improved with: .replace(/\/+$/, '')
-  const decorators = [
-    Expose({ groups: options.groups, name: options.name }),
-    Type(() => String),
-    ApiProperty({ type: String }),
-    LinkCleanupTransform(),
-    Matches(
-      /^(https:\/\/)?(www\.)?[\w#%+.:=@~-]{1,256}\.[\d()A-Za-z]{1,6}([\w!#%&()+./:=?@~-]*)$/,
-    ),
-  ];
-
-  if (options.nullable) {
-    decorators.push(IsNullable());
-  } else {
-    decorators.push(NotEquals(null));
-  }
-
-  return applyDecorators(...decorators);
-}
-
-export function YoutubeField(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  // Trailing slash cleanup could be improved with: .replace(/\/+$/, '')
-  const decorators = [
-    Expose({ groups: options.groups, name: options.name }),
-    Type(() => String),
-    ApiProperty({ type: String }),
-    LinkCleanupTransform(),
-    Matches(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/),
-  ];
-
-  if (options.nullable) {
-    decorators.push(IsNullable());
-  } else {
-    decorators.push(NotEquals(null));
-  }
-
-  return applyDecorators(...decorators);
-}
-
-export function LinkedinFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(LinkedinField(options), IsUndefinable());
-}
-
-export function FacebookFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(FacebookField(options), IsUndefinable());
-}
-
-export function InstagramFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(InstagramField(options), IsUndefinable());
-}
-
-export function TwitterFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(TwitterField(options), IsUndefinable());
-}
-
-export function WebsiteFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(WebsiteField(options), IsUndefinable());
-}
-
-export function YoutubeFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(YoutubeField(options), IsUndefinable());
 }

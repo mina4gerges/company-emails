@@ -228,8 +228,6 @@ import { Repository } from 'typeorm';
 import { PageDto } from '../../common/dto/page.dto.ts';
 import { PageMetaDto } from '../../common/dto/page-meta.dto.ts';
 import { UserNotFoundException } from '../../exceptions/user-not-found.exception.ts';
-import type { IFile } from '../../interfaces/IFile.ts';
-import type { Reference } from '../../types.ts';
 import { CreateUserDto } from './dtos/create-user.dto.ts';
 import { UserDto } from './dtos/user.dto.ts';
 import { UsersPageOptionsDto } from './dtos/users-page-options.dto.ts';
@@ -243,15 +241,8 @@ export class UserService {
     // Inject other services as needed
   ) {}
 
-  async createUser(
-    createUserDto: CreateUserDto,
-    file?: Reference<IFile>,
-  ): Promise<UserEntity> {
+  async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
     const userEntity = this.userRepository.create(createUserDto);
-
-    if (file) {
-      this.userRepository.merge(userEntity, { avatar: file.key });
-    }
 
     await this.userRepository.save(userEntity);
 
@@ -464,12 +455,11 @@ export class UserDto extends AbstractDto {
 ### Entity Structure
 
 ```typescript
-import { Column, Entity, OneToMany, OneToOne, VirtualColumn } from 'typeorm';
+import { Column, Entity, OneToOne, VirtualColumn } from 'typeorm';
 
 import { AbstractEntity } from '../../common/abstract.entity.ts';
 import { RoleType } from '../../constants/role-type.ts';
 import { UseDto } from '../../decorators/use-dto.decorator.ts';
-import { PostEntity } from '../post/post.entity.ts';
 import type { UserDtoOptions } from './dtos/user.dto.ts';
 import { UserDto } from './dtos/user.dto.ts';
 import { UserSettingsEntity } from './user-settings.entity.ts';
@@ -506,28 +496,18 @@ export class UserEntity extends AbstractEntity<UserDto, UserDtoOptions> {
 
   @OneToOne(() => UserSettingsEntity, (userSettings) => userSettings.user)
   settings?: UserSettingsEntity;
-
-  @OneToMany(() => PostEntity, (postEntity) => postEntity.user)
-  posts?: PostEntity[];
 }
 ```
 
 ### Relationship Patterns
 
 ```typescript
-// One-to-One
+// One-to-One (inverse side)
 @OneToOne(() => UserSettingsEntity, (userSettings) => userSettings.user)
 settings?: UserSettingsEntity;
 
-// One-to-Many
-@OneToMany(() => PostEntity, (postEntity) => postEntity.user)
-posts?: PostEntity[];
-
-// Many-to-One with proper deletion behavior
-@ManyToOne(() => UserEntity, (userEntity) => userEntity.posts, {
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-})
+// One-to-One (owning side) with proper deletion behavior
+@OneToOne(() => UserEntity, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
 @JoinColumn({ name: 'user_id' })
 user!: Relation<UserEntity>;
 
@@ -563,10 +543,7 @@ import type { CreateUserDto } from '../dtos/create-user.dto.ts';
 import { UserEntity } from '../user.entity.ts';
 
 export class CreateUserCommand extends Command {
-  constructor(
-    public readonly createUserDto: CreateUserDto,
-    public readonly avatarFile?: IFile,
-  ) {
+  constructor(public readonly createUserDto: CreateUserDto) {
     super();
   }
 }
@@ -581,13 +558,9 @@ export class CreateUserHandler
   ) {}
 
   async execute(command: CreateUserCommand): Promise<UserDto> {
-    const { createUserDto, avatarFile } = command;
+    const { createUserDto } = command;
 
     const userEntity = this.userRepository.create(createUserDto);
-
-    if (avatarFile) {
-      this.userRepository.merge(userEntity, { avatar: avatarFile.key });
-    }
 
     await this.userRepository.save(userEntity);
 
@@ -624,7 +597,6 @@ export class GetUserHandler implements IQueryHandler<GetUserQuery> {
     const userEntity = await this.userRepository.createQueryBuilder('user')
     .where('user.id = :userId', { userId })
       .leftJoinAndSelect('user.settings', 'settings')
-      .leftJoinAndSelect('user.posts', 'posts')
       .getOne();
 
     if (!userEntity) {
@@ -734,13 +706,13 @@ async getUser(@UUIDParam('id') userId: Uuid) {
 }
 
 // Multiple UUID parameters
-@Post(':userId/posts/:postId')
-async updateUserPost(
+@Post(':userId/settings/:settingsId')
+async updateUserSettings(
   @UUIDParam('userId') userId: Uuid,
-  @UUIDParam('postId') postId: Uuid,
-  @Body() updateDto: UpdatePostDto,
+  @UUIDParam('settingsId') settingsId: Uuid,
+  @Body() updateDto: UpdateSettingsDto,
 ) {
-  return this.service.updateUserPost(userId, postId, updateDto);
+  return this.service.updateUserSettings(userId, settingsId, updateDto);
 }
 ```
 
@@ -796,20 +768,6 @@ export class UserController {
     pageOptionsDto: UsersPageOptionsDto,
   ): Promise<PageDto<UserDto>> {
     return this.service.getUsers(pageOptionsDto);
-  }
-
-  @Post('upload-avatar')
-  @Auth([RoleType.USER])
-  @ApiFile({ name: 'avatar' })
-  @ApiOkResponse({
-    type: UserDto,
-    description: 'Avatar uploaded successfully'
-  })
-  async uploadAvatar(
-    @AuthUser() user: UserEntity,
-    @UploadedFile() file: IFile,
-  ): Promise<UserDto> {
-    return this.service.updateAvatar(user.id, file);
   }
 }
 ```

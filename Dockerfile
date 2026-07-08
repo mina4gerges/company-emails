@@ -19,9 +19,7 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 FROM node:25-slim
 
 ARG PORT=3000
-ARG secret_manager_arn
 
-ENV SECRET_MANAGER_ARN=$secret_manager_arn
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 

@@ -1,24 +1,11 @@
 import {
-  Column,
   CreateDateColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-import { LanguageCode } from '../constants/language-code.ts';
-import type {
-  AbstractDto,
-  AbstractTranslationDto,
-} from './dto/abstract.dto.ts';
+import type { AbstractDto } from './dto/abstract.dto.ts';
 
-/**
- * Abstract Entity
- * @author Mina Gerges <c.mgerges@wc34.gov.sa>
- *
- * @description This class is an abstract class for all entities.
- * It's experimental and recommended using it only in microservice architecture,
- * otherwise just delete and use your own entity.
- */
 export abstract class AbstractEntity<
   DTO extends AbstractDto = AbstractDto,
   O = never,
@@ -36,8 +23,6 @@ export abstract class AbstractEntity<
   })
   updatedAt!: Date;
 
-  translations?: AbstractTranslationEntity[];
-
   toDto(options?: O): DTO {
     const dtoClass = Object.getPrototypeOf(this).dtoClass;
 
@@ -49,12 +34,4 @@ export abstract class AbstractEntity<
 
     return new dtoClass(this, options);
   }
-}
-
-export class AbstractTranslationEntity<
-  DTO extends AbstractTranslationDto = AbstractTranslationDto,
-  O = never,
-> extends AbstractEntity<DTO, O> {
-  @Column({ type: 'enum', enum: LanguageCode })
-  languageCode!: LanguageCode;
 }

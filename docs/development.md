@@ -204,7 +204,6 @@ src/
 ├── modules/               # Feature modules
 │   ├── auth/             # Authentication module
 │   ├── user/             # User management module
-│   ├── post/             # Post management module
 │   └── health-checker/   # Health check module
 ├── providers/             # Custom providers
 ├── shared/                # Shared services and utilities
@@ -269,9 +268,6 @@ REDIS_URL=redis://localhost:6379
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 TELEGRAM_BOT_USERNAME=your-telegram-bot-username
 
-# AWS S3 (optional)
-AWS_S3_BUCKET_NAME=your-bucket-name
-
 # CORS
 CORS_ORIGINS=http://localhost:3000
 
@@ -281,11 +277,6 @@ ENABLE_DOCUMENTATION=true
 # Throttling
 THROTTLE_TTL=60
 THROTTLE_LIMIT=10
-
-# NATS (optional)
-NATS_ENABLED=false
-NATS_HOST=localhost
-NATS_PORT=4222
 ```
 
 ## Docker Development

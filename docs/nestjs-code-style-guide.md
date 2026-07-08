@@ -173,7 +173,6 @@ src/
 ├── modules/                  # Feature modules
 │   ├── auth/                 # Authentication module
 │   ├── user/                 # User management module
-│   ├── post/                 # Post management module
 │   └── health-checker/       # Health check module
 ├── providers/                # Custom providers
 ├── shared/                   # Shared services and modules
@@ -375,8 +374,8 @@ PATCH  /users/{id}         // Partially update user
 DELETE /users/{id}         // Delete user
 
 // Nested resources
-GET    /users/{id}/posts   // Get user's posts
-POST   /users/{id}/posts   // Create post for user
+GET    /users/{id}/settings   // Get user's settings
+POST   /users/{id}/settings   // Create settings for user
 
 // ❌ WRONG: Non-RESTful endpoints
 POST   /users/create       // ❌ verb in URL
@@ -441,8 +440,6 @@ import { Repository } from 'typeorm';
 
 import { PageDto } from '../../common/dto/page.dto.ts';
 import { UserNotFoundException } from '../../exceptions/user-not-found.exception.ts';
-import type { IFile } from '../../interfaces/IFile.ts';
-import type { Reference } from '../../types.ts';
 import { CreateUserDto } from './dtos/create-user.dto.ts';
 import { UserDto } from './dtos/user.dto.ts';
 import { UsersPageOptionsDto } from './dtos/users-page-options.dto.ts';
@@ -455,15 +452,8 @@ export class UserService {
     private userRepository: Repository<UserEntity>,
   ) {}
 
-  async createUser(
-    createUserDto: CreateUserDto,
-    file?: Reference<IFile>,
-  ): Promise<UserEntity> {
+  async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
     const userEntity = this.userRepository.create(createUserDto);
-
-    if (file) {
-      this.userRepository.merge(userEntity, { avatar: file.key });
-    }
 
     await this.userRepository.save(userEntity);
     return userEntity;
@@ -672,12 +662,11 @@ The project uses custom field decorators that combine validation and Swagger doc
 ### Entity Structure Pattern
 
 ```typescript
-import { Column, Entity, OneToMany, OneToOne, VirtualColumn } from 'typeorm';
+import { Column, Entity, OneToOne, VirtualColumn } from 'typeorm';
 
 import { AbstractEntity } from '../../common/abstract.entity.ts';
 import { RoleType } from '../../constants/role-type.ts';
 import { UseDto } from '../../decorators/use-dto.decorator.ts';
-import { PostEntity } from '../post/post.entity.ts';
 import type { UserDtoOptions } from './dtos/user.dto.ts';
 import { UserDto } from './dtos/user.dto.ts';
 import { UserSettingsEntity } from './user-settings.entity.ts';
@@ -714,9 +703,6 @@ export class UserEntity extends AbstractEntity<UserDto, UserDtoOptions> {
 
   @OneToOne(() => UserSettingsEntity, (userSettings) => userSettings.user)
   settings?: UserSettingsEntity;
-
-  @OneToMany(() => PostEntity, (postEntity) => postEntity.user)
-  posts?: PostEntity[];
 }
 ```
 
@@ -746,18 +732,16 @@ modules/user/
 ├── user.entity.ts          ✅ Owned by user module
 └── user-settings.entity.ts ✅ Owned by user module
 
-modules/post/
-├── post.entity.ts          ✅ Owned by post module
-└── post-category.entity.ts ✅ Owned by post module
+modules/auth/
+└── (no entities of its own — uses UserService for user data)
 
 // ❌ WRONG: Don't do this
-modules/post/
-├── post.entity.ts
+modules/auth/
 └── user.entity.ts          ❌ User entity belongs to user module
 
 // ✅ CORRECT: Use services for cross-module data
 @Injectable()
-export class PostService {
+export class AuthService {
   constructor(
     private userService: UserService, // ✅ Use service, not entity
   ) {}
@@ -771,12 +755,12 @@ export class PostService {
 ```typescript
 // Command definition
 import { Command } from '@nestjs/cqrs';
-import type { CreatePostDto } from '../dtos/create-post.dto.ts';
+import type { CreateSettingsDto } from '../dtos/create-settings.dto.ts';
 
-export class CreatePostCommand extends Command {
+export class CreateSettingsCommand extends Command {
   constructor(
     public userId: Uuid,
-    public createPostDto: CreatePostDto,
+    public createSettingsDto: CreateSettingsDto,
   ) {
     super();
   }
@@ -792,25 +776,24 @@ import { CommandHandler } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { PostEntity } from '../post.entity.ts';
-import { CreatePostCommand } from './create-post.command.ts';
-import { PostDto } from '../dtos/post.dto.ts';
+import { UserSettingsEntity } from '../user-settings.entity.ts';
+import { CreateSettingsCommand } from './create-settings.command.ts';
 
-@CommandHandler(CreatePostCommand)
-export class CreatePostHandler
-  implements ICommandHandler<CreatePostCommand>
+@CommandHandler(CreateSettingsCommand)
+export class CreateSettingsHandler
+  implements ICommandHandler<CreateSettingsCommand>
 {
   constructor(
-    @InjectRepository(PostEntity)
-    private postRepository: Repository<PostEntity>,
+    @InjectRepository(UserSettingsEntity)
+    private userSettingsRepository: Repository<UserSettingsEntity>,
   ) {}
 
-  async execute(command: CreatePostCommand): Promise<PostDto> {
-    const { userId, createPostDto } = command;
-    const postEntity = this.postRepository.create({ userId });
+  async execute(command: CreateSettingsCommand): Promise<UserSettingsEntity> {
+    const { userId, createSettingsDto } = command;
+    const settingsEntity = this.userSettingsRepository.create(createSettingsDto);
+    settingsEntity.userId = userId;
 
-    await this.postRepository.save(postEntity);
-    return postEntity.toDto();
+    return this.userSettingsRepository.save(settingsEntity);
   }
 }
 ```

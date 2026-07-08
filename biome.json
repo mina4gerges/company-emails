@@ -419,18 +419,6 @@
     },
     {
       "includes": [
-        "src/shared/services/aws-s3.service.ts"
-      ],
-      "linter": {
-        "rules": {
-          "style": {
-            "useNamingConvention": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": [
         "src/constants/credits.constants.ts"
       ],
       "linter": {

@@ -9,10 +9,6 @@
     - [Testing](#testing)
     - [Database Operations](#database-operations)
     - [Code Quality](#code-quality)
-  - [Runtime Support](#runtime-support)
-    - [Node.js (Default)](#nodejs-default)
-    - [Bun](#bun)
-    - [Deno](#deno)
   - [Initial Setup Checklist](#initial-setup-checklist)
     - [1. Project Configuration](#1-project-configuration)
     - [2. Environment Setup](#2-environment-setup)
@@ -132,55 +128,6 @@ pnpm lint:fix
 
 # Update dependencies
 pnpm taze
-```
-
-## Runtime Support
-
-This boilerplate supports multiple JavaScript runtimes for maximum flexibility:
-
-### Node.js (Default)
-The traditional and most stable runtime environment with full ecosystem support.
-
-```bash
-# Development
-pnpm start:dev
-
-# Production
-pnpm build:prod && pnpm start:prod
-```
-
-### Bun
-High-performance JavaScript runtime with built-in bundler and package manager.
-
-```bash
-# Start development server with Bun
-bun start:dev:bun
-
-# Watch mode with Bun
-bun watch:bun
-
-# Run tests with Bun
-bun test
-
-# Build with Bun
-bun build:bun
-```
-
-### Deno
-Secure runtime for JavaScript and TypeScript with built-in tooling.
-
-```bash
-# Start development server with Deno
-deno task start
-
-# Watch mode with Deno
-deno task watch
-
-# Run tests with Deno
-deno task test
-
-# Build with Deno
-deno task buildr
 ```
 
 ## Initial Setup Checklist

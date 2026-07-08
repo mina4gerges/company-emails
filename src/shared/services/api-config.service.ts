@@ -7,8 +7,6 @@ import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import parse from 'parse-duration';
 
 import { UserSubscriber } from '../../entity-subscribers/user-subscriber.ts';
-import { PostEntity } from '../../modules/post/post.entity.ts';
-import { PostTranslationEntity } from '../../modules/post/post-translation.entity.ts';
 import { UserEntity } from '../../modules/user/user.entity.ts';
 import { UserSettingsEntity } from '../../modules/user/user-settings.entity.ts';
 import { SnakeNamingStrategy } from '../../snake-naming.strategy.ts';
@@ -101,12 +99,7 @@ export class ApiConfigService {
   }
 
   get postgresConfig(): TypeOrmModuleOptions {
-    const entities = [
-      UserEntity,
-      UserSettingsEntity,
-      PostEntity,
-      PostTranslationEntity,
-    ];
+    const entities = [UserEntity, UserSettingsEntity];
     const migrations = [
       path.join(import.meta.dirname, `../../database/migrations/*{.ts,.js}`),
     ];
@@ -128,27 +121,8 @@ export class ApiConfigService {
     };
   }
 
-  get awsS3Config() {
-    return {
-      bucketRegion: this.getString('AWS_S3_BUCKET_REGION'),
-      bucketApiVersion: this.getString('AWS_S3_API_VERSION'),
-      bucketName: this.getString('AWS_S3_BUCKET_NAME'),
-    };
-  }
-
   get documentationEnabled(): boolean {
     return this.getBoolean('ENABLE_DOCUMENTATION');
-  }
-
-  get natsEnabled(): boolean {
-    return this.getBoolean('NATS_ENABLED');
-  }
-
-  get natsConfig() {
-    return {
-      host: this.getString('NATS_HOST'),
-      port: this.getNumber('NATS_PORT'),
-    };
   }
 
   get authConfig() {
@@ -175,4 +149,3 @@ export class ApiConfigService {
     return value;
   }
 }
-

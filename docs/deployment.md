@@ -93,17 +93,6 @@ ENABLE_DOCUMENTATION=false
 # Throttling
 THROTTLER_TTL=60
 THROTTLER_LIMIT=100
-
-# NATS (if using microservices)
-NATS_ENABLED=false
-NATS_HOST=your-nats-host
-NATS_PORT=4222
-
-# AWS S3 (if using file uploads)
-AWS_S3_BUCKET_NAME=your-bucket-name
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_REGION=us-east-1
 ```
 
 ### Database Configuration

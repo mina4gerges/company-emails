@@ -20,9 +20,6 @@ This guide covers the API documentation practices and standards used in the Awes
     - [User Management](#user-management)
       - [GET /users/:id](#get-usersid)
       - [GET /users](#get-users)
-    - [Post Management](#post-management)
-      - [POST /posts](#post-posts)
-      - [GET /posts/:id](#get-postsid)
     - [Health Check](#health-check)
       - [GET /health](#get-health)
   - [Request/Response Patterns](#requestresponse-patterns)
@@ -86,7 +83,6 @@ export function setupSwagger(app: INestApplication): void {
     .addBearerAuth()
     .addTag('auth', 'Authentication endpoints')
     .addTag('users', 'User management endpoints')
-    .addTag('posts', 'Post management endpoints')
     .addTag('health', 'Health check endpoints')
     .build();
 
@@ -222,50 +218,6 @@ Get paginated list of users (requires ADMIN role).
 - `page` (number, optional): Page number (default: 1)
 - `take` (number, optional): Items per page (default: 10)
 - `order` (string, optional): Sort order (ASC/DESC)
-
-### Post Management
-
-#### POST /posts
-Create a new post (requires authentication).
-
-**Request Body**:
-```json
-{
-  "title": [
-    {
-      "languageCode": "en",
-      "text": "Post Title"
-    }
-  ],
-  "description": [
-    {
-      "languageCode": "en",
-      "text": "Post description"
-    }
-  ]
-}
-```
-
-#### GET /posts/:id
-Get post by ID.
-
-**Response**:
-```json
-{
-  "id": "uuid",
-  "title": "Post Title",
-  "description": "Post description",
-  "translations": [
-    {
-      "languageCode": "en",
-      "title": "Post Title",
-      "description": "Post description"
-    }
-  ],
-  "createdAt": "2023-01-01T00:00:00.000Z",
-  "updatedAt": "2023-01-01T00:00:00.000Z"
-}
-```
 
 ### Health Check
 
@@ -533,12 +485,12 @@ All input is validated using:
 The API supports multiple languages through the `Accept-Language` header or `lang` query parameter:
 
 ```http
-GET /posts
+GET /users
 Accept-Language: en-US
 
 # or
 
-GET /posts?lang=en
+GET /users?lang=en
 ```
 
 Supported languages:
@@ -564,15 +516,6 @@ curl -X POST http://localhost:3000/auth/login \
 # Get user (with token)
 curl -X GET http://localhost:3000/users/uuid \
   -H "Authorization: Bearer your-jwt-token"
-
-# Create post
-curl -X POST http://localhost:3000/posts \
-  -H "Authorization: Bearer your-jwt-token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": [{"languageCode": "en", "text": "My Post"}],
-    "description": [{"languageCode": "en", "text": "Post description"}]
-  }'
 ```
 
 ### Using Postman

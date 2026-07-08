@@ -85,9 +85,6 @@ awesome-nest-boilerplate/
 │   ├── modules/               # Feature modules
 │   │   ├── auth/             # Authentication module
 │   │   ├── user/             # User management module
-│   │   ├── post/             # Post management module
-│   │   ├── chat/             # Chat history (JSONB-persisted)
-│   │   ├── agent/            # ai-sdk v6 agent (streaming + tools + HITL)
 │   │   └── health-checker/   # Health check module
 │   ├── providers/             # Custom providers
 │   ├── shared/                # Shared services and utilities
@@ -146,8 +143,8 @@ export class UserEntity extends AbstractEntity<UserDto, UserDtoOptions> {
   @Column({ type: 'enum', enum: RoleType, default: RoleType.USER })
   role!: RoleType;
 
-  @OneToMany(() => PostEntity, (postEntity) => postEntity.user)
-  posts?: PostEntity[];
+  @OneToOne(() => UserSettingsEntity, (userSettings) => userSettings.user)
+  settings?: UserSettingsEntity;
 }
 ```
 
@@ -158,17 +155,17 @@ Separates read and write operations for better scalability and maintainability:
 
 ```typescript
 // Command for state changes
-export class CreatePostCommand extends Command {
+export class CreateSettingsCommand extends Command {
   constructor(
     public readonly userId: Uuid,
-    public readonly createPostDto: CreatePostDto,
+    public readonly createSettingsDto: CreateSettingsDto,
   ) {
     super();
   }
 }
 
 // Query for data retrieval
-export class GetPostQuery extends Query {
+export class GetUserQuery extends Query {
   constructor(public readonly userId: Uuid) {
     super();
   }
@@ -180,17 +177,19 @@ Implemented through TypeORM repositories with dependency injection:
 
 ```typescript
 @Injectable()
-export class PostService {
+export class UserService {
   constructor(
-    @InjectRepository(PostEntity)
-    private postRepository: Repository<PostEntity>,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
     private commandBus: CommandBus,
   ) {}
 
-  @Transactional()
-  createPost(userId: Uuid, createPostDto: CreatePostDto): Promise<PostEntity> {
-    return this.commandBus.execute<CreatePostCommand, PostEntity>(
-      new CreatePostCommand(userId, createPostDto),
+  createSettings(
+    userId: Uuid,
+    createSettingsDto: CreateSettingsDto,
+  ): Promise<UserSettingsEntity> {
+    return this.commandBus.execute<CreateSettingsCommand, UserSettingsEntity>(
+      new CreateSettingsCommand(userId, createSettingsDto),
     );
   }
 }
@@ -203,9 +202,9 @@ Leverages NestJS's powerful DI container for loose coupling and testability.
 Uses custom decorators for automatic entity-to-DTO conversion:
 
 ```typescript
-@Entity({ name: 'posts' })
-@UseDto(PostDto)
-export class PostEntity extends AbstractEntity<PostDto> {
+@Entity({ name: 'users' })
+@UseDto(UserDto)
+export class UserEntity extends AbstractEntity<UserDto> {
   // Entity properties
 }
 ```
@@ -220,15 +219,12 @@ export class PostEntity extends AbstractEntity<PostDto> {
 
 #### Entity Relationships
 ```typescript
-// One-to-Many relationship
-@OneToMany(() => PostEntity, (postEntity) => postEntity.user)
-posts?: PostEntity[];
+// One-to-One relationship
+@OneToOne(() => UserSettingsEntity, (userSettings) => userSettings.user)
+settings?: UserSettingsEntity;
 
-// Many-to-One with cascade options
-@ManyToOne(() => UserEntity, (userEntity) => userEntity.posts, {
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE',
-})
+// One-to-One owning side with cascade options
+@OneToOne(() => UserEntity, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
 @JoinColumn({ name: 'user_id' })
 user!: Relation<UserEntity>;
 ```
@@ -236,7 +232,7 @@ user!: Relation<UserEntity>;
 #### Transaction Support
 ```typescript
 @Transactional()
-async createPost(userId: Uuid, createPostDto: CreatePostDto): Promise<PostEntity> {
+async createUser(userRegisterDto: UserRegisterDto): Promise<UserEntity> {
   // All database operations within this method are wrapped in a transaction
 }
 ```
@@ -440,9 +436,7 @@ export class ApiConfigService {
 - **Swagger**: API documentation generation
 
 ### Runtime Support
-- **Node.js**: Primary runtime environment
-- **Bun**: High-performance alternative runtime
-- **Deno**: Secure TypeScript runtime
+- **Node.js**: Primary and only supported runtime environment
 
 ## Best Practices
 
