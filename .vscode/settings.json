@@ -1,0 +1,19 @@
+{
+    "cSpell.words": [
+        "cooldown",
+        "dtos",
+        "Injectable",
+        "microcategory",
+        "microservices",
+        "nestjs",
+        "postgres",
+        "setex",
+        "sonarjs",
+        "usecases"
+    ],
+    "editor.detectIndentation": false,
+    "rift.autostart": false,
+    "i18n-ally.localesPaths": [
+      "src/i18n"
+    ]
+}
