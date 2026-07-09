@@ -1,7 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import type { ApiPropertyOptions } from '@nestjs/swagger';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDate,
@@ -67,7 +67,7 @@ type IEnumFieldOptions = IFieldOptions;
 export function NumberField(
   options: Omit<ApiPropertyOptions, 'type'> & INumberFieldOptions = {},
 ): PropertyDecorator {
-  const decorators = [Type(() => Number)];
+  const decorators = [Expose(), Type(() => Number)];
 
   if (options.nullable) {
     decorators.push(IsNullable({ each: options.each }));
@@ -120,6 +120,7 @@ export function StringField(
   options: Omit<ApiPropertyOptions, 'type'> & IStringFieldOptions = {},
 ): PropertyDecorator {
   const decorators = [
+    Expose(),
     Type(() => String),
     IsString({ each: options.each }),
     Trim(options.trimNewLines ?? true),
@@ -188,7 +189,7 @@ export function PasswordField(
 export function BooleanField(
   options: Omit<ApiPropertyOptions, 'type'> & IBooleanFieldOptions = {},
 ): PropertyDecorator {
-  const decorators = [ToBoolean(), IsBoolean()];
+  const decorators = [Expose(), ToBoolean(), IsBoolean()];
 
   if (options.nullable) {
     decorators.push(IsNullable());
@@ -221,7 +222,10 @@ export function EnumField(
     IEnumFieldOptions = {},
 ): PropertyDecorator {
   const enumValue = getEnum();
-  const decorators = [IsEnum(enumValue as object, { each: options.each })];
+  const decorators = [
+    Expose(),
+    IsEnum(enumValue as object, { each: options.each }),
+  ];
 
   if (options.nullable) {
     decorators.push(IsNullable());
@@ -250,6 +254,7 @@ export function ClassField<TClass extends Constructor>(
   const entity = getClass();
 
   const decorators = [
+    Expose(),
     Type(() => entity),
     ValidateNested({ each: options.each }),
   ];
@@ -329,7 +334,7 @@ export function EmailFieldOptional(
 export function PhoneField(
   options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
 ): PropertyDecorator {
-  const decorators = [IsPhoneNumber(), PhoneNumberSerializer()];
+  const decorators = [Expose(), IsPhoneNumber(), PhoneNumberSerializer()];
 
   if (options.nullable) {
     decorators.push(IsNullable());
@@ -359,7 +364,11 @@ export function UUIDField(
   options: Omit<ApiPropertyOptions, 'type' | 'format' | 'isArray'> &
     IFieldOptions = {},
 ): PropertyDecorator {
-  const decorators = [Type(() => String), IsUUID('4', { each: options.each })];
+  const decorators = [
+    Expose(),
+    Type(() => String),
+    IsUUID('4', { each: options.each }),
+  ];
 
   if (options.nullable) {
     decorators.push(IsNullable());
@@ -381,7 +390,7 @@ export function UUIDField(
 export function DateField(
   options: Omit<ApiPropertyOptions, 'type'> & IFieldOptions = {},
 ): PropertyDecorator {
-  const decorators = [Type(() => Date), IsDate()];
+  const decorators = [Expose(), Type(() => Date), IsDate()];
 
   if (options.nullable) {
     decorators.push(IsNullable());
