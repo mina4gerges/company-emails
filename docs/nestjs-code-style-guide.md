@@ -166,8 +166,8 @@ src/
 ├── filters/                  # Exception filters
 ├── guards/                   # Authentication/authorization guards
 ├── i18n/                     # Internationalization files
-│   ├── en_US/
-│   └── ar_SA/
+│   ├── en-US/
+│   └── ar-SA/
 ├── interceptors/             # Request/response interceptors
 ├── interfaces/               # TypeScript interfaces
 ├── modules/                  # Feature modules

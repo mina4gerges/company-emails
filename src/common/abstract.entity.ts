@@ -1,10 +1,15 @@
 import {
+  Column,
   CreateDateColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
-import type { AbstractDto } from './dto/abstract.dto.ts';
+import { LanguageCode } from '../constants/language-code.ts';
+import type {
+  AbstractDto,
+  AbstractTranslationDto,
+} from './dto/abstract.dto.ts';
 
 export abstract class AbstractEntity<
   DTO extends AbstractDto = AbstractDto,
@@ -23,6 +28,8 @@ export abstract class AbstractEntity<
   })
   updatedAt!: Date;
 
+  translations?: AbstractTranslationEntity[];
+
   toDto(options?: O): DTO {
     const dtoClass = Object.getPrototypeOf(this).dtoClass;
 
@@ -34,4 +41,12 @@ export abstract class AbstractEntity<
 
     return new dtoClass(this, options);
   }
+}
+
+export class AbstractTranslationEntity<
+  DTO extends AbstractTranslationDto = AbstractTranslationDto,
+  O = never,
+> extends AbstractEntity<DTO, O> {
+  @Column({ type: 'enum', enum: LanguageCode })
+  languageCode!: LanguageCode;
 }

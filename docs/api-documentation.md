@@ -495,7 +495,7 @@ GET /users?lang=en
 
 Supported languages:
 - `en` (English)
-- `ru` (Russian)
+- `ar` (Arabic)
 
 ## API Testing
 

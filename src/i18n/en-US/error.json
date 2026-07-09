@@ -1,0 +1,24 @@
+{
+    "unique": {
+        "email": "This email is already in use"
+    },
+    "phoneNumber": "Must be a valid phone number",
+    "fields": {
+        "is_boolean": "Must be a boolean value",
+        "is_date": "Must be a valid date",
+        "is_defined": "This field is required",
+        "is_email": "Must be a valid email address",
+        "is_enum": "Must be a valid value",
+        "is_int": "Must be an integer",
+        "is_number": "Must be a number",
+        "is_positive": "Must be a positive number",
+        "is_string": "Must be a string",
+        "is_uuid": "Must be a valid UUID",
+        "is_password": "Must contain only letters, numbers, and !#$%&*@",
+        "max": "Value is too large",
+        "max_length": "Value is too long",
+        "min": "Value is too small",
+        "min_length": "Value is too short",
+        "not_equals": "This field cannot be null"
+    }
+}

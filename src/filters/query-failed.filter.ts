@@ -6,16 +6,20 @@ import { Reflector } from '@nestjs/core';
 import type { Response } from 'express';
 import { QueryFailedError } from 'typeorm';
 
+import { TranslationService } from '../shared/services/translation.service.ts';
 import { constraintErrors } from './constraint-errors.ts';
 
 @Catch(QueryFailedError)
 export class QueryFailedFilter implements ExceptionFilter<QueryFailedError> {
-  constructor(public reflector: Reflector) {}
+  constructor(
+    public reflector: Reflector,
+    private readonly translationService: TranslationService,
+  ) {}
 
-  catch(
+  async catch(
     exception: QueryFailedError & { constraint?: string },
     host: ArgumentsHost,
-  ) {
+  ): Promise<void> {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
@@ -23,12 +27,14 @@ export class QueryFailedFilter implements ExceptionFilter<QueryFailedError> {
       ? HttpStatus.CONFLICT
       : HttpStatus.INTERNAL_SERVER_ERROR;
 
+    const key = exception.constraint
+      ? constraintErrors[exception.constraint]
+      : undefined;
+
     response.status(status).json({
       statusCode: status,
       error: STATUS_CODES[status],
-      message: exception.constraint
-        ? constraintErrors[exception.constraint]
-        : undefined,
+      message: key ? await this.translationService.translate(key) : undefined,
     });
   }
 }

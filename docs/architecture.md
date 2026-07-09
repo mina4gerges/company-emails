@@ -75,8 +75,8 @@ awesome-nest-boilerplate/
 │   │   └── query-failed.filter.ts    # Database error filter
 │   ├── guards/                # Authentication and authorization guards
 │   ├── i18n/                  # Internationalization files
-│   │   ├── en_US/            # English translations
-│   │   └── ar_SA/            # Russian translations
+│   │   ├── en-US/            # English translations
+│   │   └── ar-SA/            # Arabic (Saudi Arabia) translations
 │   ├── interceptors/          # Request/Response interceptors
 │   │   ├── auth-user-interceptor.service.ts
 │   │   ├── language-interceptor.service.ts

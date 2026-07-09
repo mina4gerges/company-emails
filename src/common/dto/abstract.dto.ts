@@ -1,4 +1,6 @@
 import { DateField, UUIDField } from '../../decorators/field.decorators.ts';
+import { DYNAMIC_TRANSLATION_DECORATOR_KEY } from '../../decorators/translate.decorator.ts';
+import { ContextProvider } from '../../providers/context.provider.ts';
 import type { AbstractEntity } from '../abstract.entity.ts';
 
 export class AbstractDto {
@@ -11,13 +13,49 @@ export class AbstractDto {
   @DateField()
   updatedAt!: Date;
 
-  constructor(entity?: AbstractEntity) {
+  translations?: AbstractTranslationDto[];
+
+  constructor(entity?: AbstractEntity, options?: { excludeFields?: boolean }) {
     if (!entity) {
       return;
     }
 
-    this.id = entity.id;
-    this.createdAt = entity.createdAt;
-    this.updatedAt = entity.updatedAt;
+    if (!options?.excludeFields) {
+      this.id = entity.id;
+      this.createdAt = entity.createdAt;
+      this.updatedAt = entity.updatedAt;
+    }
+
+    const languageCode = ContextProvider.getLanguage();
+
+    if (languageCode && entity.translations) {
+      const translationEntity = entity.translations.find(
+        (translation) => translation.languageCode === languageCode,
+      )!;
+
+      const fields: Record<string, string> = {};
+
+      for (const key of Object.keys(translationEntity)) {
+        const metadata: unknown = Reflect.getMetadata(
+          DYNAMIC_TRANSLATION_DECORATOR_KEY,
+          this,
+          key,
+        );
+
+        if (metadata) {
+          fields[key] = (translationEntity as never)[key];
+        }
+      }
+
+      Object.assign(this, fields);
+    } else {
+      this.translations = entity.translations?.toDtos();
+    }
+  }
+}
+
+export class AbstractTranslationDto extends AbstractDto {
+  constructor(entity?: AbstractEntity) {
+    super(entity, { excludeFields: true });
   }
 }

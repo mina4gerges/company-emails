@@ -46,17 +46,16 @@ export async function bootstrap(): Promise<NestExpressApplication> {
   app.enableVersioning();
 
   const reflector = app.get(Reflector);
+  const translationService = app.select(SharedModule).get(TranslationService);
 
   app.useGlobalFilters(
-    new HttpExceptionFilter(reflector),
-    new QueryFailedFilter(reflector),
+    new HttpExceptionFilter(reflector, translationService),
+    new QueryFailedFilter(reflector, translationService),
   );
 
   app.useGlobalInterceptors(
     new ClassSerializerInterceptor(reflector),
-    new TranslationInterceptor(
-      app.select(SharedModule).get(TranslationService),
-    ),
+    new TranslationInterceptor(translationService),
   );
 
   app.useGlobalPipes(

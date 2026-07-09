@@ -197,8 +197,8 @@ src/
 ├── filters/               # Exception filters
 ├── guards/                # Authentication and authorization guards
 ├── i18n/                  # Internationalization files
-│   ├── en_US/            # English translations
-│   └── ar_SA/            # Russian translations
+│   ├── en-US/            # English translations
+│   └── ar-SA/            # Arabic (Saudi Arabia) translations
 ├── interceptors/          # Request/Response interceptors
 ├── interfaces/            # TypeScript interfaces
 ├── modules/               # Feature modules

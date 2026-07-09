@@ -13,9 +13,12 @@ export class TranslationService {
   constructor(private readonly i18n: I18nService) {}
 
   translate(key: string, options?: TranslateOptions): Promise<string> {
+    const languageCode = ContextProvider.getLanguage();
+
+    // only overrides I18nContext's resolved lang when x-language-code is set
     return this.i18n.translate(key, {
       ...options,
-      lang: ContextProvider.getLanguage(),
+      ...(languageCode ? { lang: languageCode } : {}),
     });
   }
 
