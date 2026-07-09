@@ -51,20 +51,46 @@ import { SharedModule } from './shared/shared.module.ts';
       useFactory: (configService: ApiConfigService) =>
         configService.postgresConfig,
       inject: [ApiConfigService],
-      dataSourceFactory: (options) => {
+      dataSourceFactory: async (options) => {
         if (!options) {
           throw new Error('Invalid options passed');
         }
 
         // Reuse existing DataSource on Vite HMR hot reload
         const existingDs = getDataSourceByName('default');
+        if (existingDs?.isInitialized) {
+          /*
+           * HMR re-transpiles entity modules on every reload, so classes
+           * like UserEntity get a new identity each time. The reused
+           * DataSource still has metadata keyed to the old class objects,
+           * so @InjectRepository(UserEntity) on the new class would miss —
+           * rebuild metadata against the freshly-imported entities.
+           */
+          existingDs.setOptions(options);
+          await (
+            existingDs as unknown as { buildMetadatas: () => Promise<void> }
+          ).buildMetadatas();
+
+          return existingDs;
+        }
         if (existingDs) {
-          return Promise.resolve(existingDs);
+          return existingDs.initialize();
         }
 
-        return Promise.resolve(
-          addTransactionalDataSource(new DataSource(options)),
-        );
+        const dataSource = addTransactionalDataSource(new DataSource(options));
+
+        /*
+         * vite-plugin-node's Nest adapter (server/nest.js) closes the
+         * previous Nest app on the next request after an HMR reload, which
+         * tears down whichever DataSource that app's container resolves —
+         * the shared singleton reused above. That close is unrelated to
+         * this DataSource's actual lifecycle, so no-op it in dev.
+         */
+        if (process.env.NODE_ENV === 'development') {
+          dataSource.destroy = () => Promise.resolve();
+        }
+
+        return dataSource;
       },
     }),
     // eslint-disable-next-line canonical/id-match

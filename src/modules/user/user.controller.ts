@@ -20,7 +20,7 @@ import {
 import { UseLanguageInterceptor } from '../../interceptors/language-interceptor.service.ts';
 import { TranslationService } from '../../shared/services/translation.service.ts';
 import { UserDto } from './dtos/user.dto.ts';
-import type { UsersPageOptionsDto } from './dtos/users-page-options.dto.ts';
+import { UsersPageOptionsDto } from './dtos/users-page-options.dto.ts';
 import type { UserEntity } from './user.entity.ts';
 import { UserService } from './user.service.ts';
 
